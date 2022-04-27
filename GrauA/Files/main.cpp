@@ -21,14 +21,18 @@ vector<Obj3D*> listaDeObjs;
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-//camera
-float camSpeed = 0.01f;
-float dirSpeed = 0.01f;
+float camSpeed			= 0.01f;
+float dirSpeed			= 0.01f;
+float pitchAngle		= -15.f;
+float yawAngle			= -90.f;
+int framebufferWidth	= 0;
+int framebufferHeight	= 0;
+int selecionado			= 1;
+float fov				= 90.f;
+float nearPlane			= 0.1f;
+float farPlane			= 1000.f;
 
-bool firtMouse = true;
-
-float pitchAngle = -15.f;
-float yawAngle = -90.f;
+//declaracao dos posicionamentos inicias como altura, direcao da camera etc.
 glm::vec3 camDirection = glm::vec3(
 	glm::normalize(glm::vec3(
 		cos(glm::radians(pitchAngle)) * cos(glm::radians(yawAngle)),
@@ -36,14 +40,11 @@ glm::vec3 camDirection = glm::vec3(
 		cos(glm::radians(pitchAngle)) * sin(glm::radians(yawAngle))
 	))
 );
-
 glm::vec3 camPosition(0.0f, 8.0f, 15.0f);
 glm::vec3 worldUp(0.0f, 4.0f, 0.0f);
 glm::vec3 camFront = glm::normalize(glm::cross(camDirection, worldUp));
-
 glm::mat4 ViewMatrix = glm::lookAt(camPosition, camPosition + camDirection, worldUp);
-
-int selecionado = 1;
+glm::mat4 ProjectionMatrix(1.f);
 
 int main()
 {
@@ -59,30 +60,18 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 
-	//mouse
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glewExperimental = GL_TRUE;
 	glewInit();
-
-	int framebufferWidth = 0;
-	int framebufferHeight = 0;
-
 	glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
 	glEnable(GL_DEPTH_TEST);
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	//read shaders
+	//carrega os shaders
 	GLuint shaderProgram = LoadShader("Shaders/Core/core.vert", "Shaders/Core/core.frag");
 	glUseProgram(shaderProgram);
-
-	float fov = 90.f;
-	float nearPlane = 0.1f;
-	float farPlane = 1000.f;
-	glm::mat4 ProjectionMatrix(1.f);
 
 	ProjectionMatrix = glm::perspective(glm::radians(fov), static_cast<float>(framebufferWidth) / framebufferHeight, nearPlane, farPlane);
 
@@ -95,10 +84,11 @@ int main()
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 
+	//Declaracoes dos objetos 3D da cena e Mesh dos mesmos
 	Obj3D* obj3d = new Obj3D();
 	obj3d->Inicializar();
-	obj3d->position.x = 12.0f;
-	Mesh* mesh = obj3d->processObj("mesa01.obj");
+	obj3d->position.x = 12.0f; //posicionamento do objeto na cena
+	Mesh* mesh = obj3d->processObj("mesa01.obj"); //Qual objeto deve processar
 	obj3d->mesh = mesh;
 	vector<Material*> materials = obj3d->getMat();
 	obj3d->materials = materials;
@@ -116,29 +106,31 @@ int main()
 
 	while (!glfwWindowShouldClose(window))
 	{
-
+		//Controle dos input de teclado ou mouse
 		processInput(window);
 		processInput(window, listaDeObjs[selecionado - 1]->position, listaDeObjs[selecionado - 1]->rotation, listaDeObjs[selecionado - 1]->scale, selecionado);
 
-		int mouseState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+		//glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClearColor(0.0f, 12.0f, 172.0f, 172.0f);//cor de fundo da cena
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(shaderProgram);
 
+		//Criado posicionamento da camera.
 		glm::vec3 camFrontCalc;
 		camFrontCalc.x = cos(glm::radians(pitchAngle)) * cos(glm::radians(yawAngle));
 		camFrontCalc.y = sin(glm::radians(pitchAngle));
 		camFrontCalc.z = cos(glm::radians(pitchAngle)) * sin(glm::radians(yawAngle));
 		camDirection = glm::normalize(camFrontCalc);
 
+		//Transforma vértices do espaço definido para o de camera para ser passado para opengl.
 		ViewMatrix = glm::lookAt(camPosition, camPosition + camDirection, worldUp);
 
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "ViewMatrix"), 1, GL_FALSE, glm::value_ptr(ViewMatrix));
 
 		glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
-
+	
 		ProjectionMatrix = glm::mat4(1.f);
 		ProjectionMatrix = glm::perspective(glm::radians(fov), static_cast<float>(framebufferWidth) / framebufferHeight, nearPlane, farPlane);
 
@@ -148,6 +140,7 @@ int main()
 		{
 			listaDeObjs[i]->transform();
 			GLuint texture;
+			//transforma a textura de informacoes dentro dos .obj para o opengl entender.
 			for (Group* g : listaDeObjs[i]->mesh->groups) {
 				for (Material* m : listaDeObjs[i]->materials) {
 					texture = m->texture;
@@ -161,6 +154,7 @@ int main()
 				glBindTexture(GL_TEXTURE_2D, texture);
 				glUniform1i(glGetUniformLocation(shaderProgram, "texture"), 0);
 
+				//VAO
 				glBindVertexArray(g->vao);
 
 				glUniform1i((glGetUniformLocation(shaderProgram, "selecionado")), selecionado == i+1);
@@ -191,6 +185,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void processInput(GLFWwindow* window, glm::vec3& position, glm::vec3& rotation, glm::vec3& scale, int idObjeto)
 {
+	//controle do objeto de controle.
 	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
 	{
 		selecionado = 1;
@@ -200,15 +195,18 @@ void processInput(GLFWwindow* window, glm::vec3& position, glm::vec3& rotation, 
 		selecionado = 2;
 	}
 
+	//Quando definido o objeto selecionado, controle dos input de camera e movimentacao do objeto.
 	if (selecionado == idObjeto)
 	{
-
+		//controle de camera zoom
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
 			camPosition += camSpeed * camDirection;
 		}
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
 			camPosition -= camSpeed * camDirection;
 		}
+
+		//controle da movimentacao do objeto selecionado
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 			position.y += 0.001f;
 		}
@@ -243,7 +241,7 @@ void processInput(GLFWwindow* window, glm::vec3& position, glm::vec3& rotation, 
 			scale -= 0.001f;
 		}
 	}
-
+	//controle de camera e angulacao
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
 		camPosition += camSpeed * camDirection;
 	}
