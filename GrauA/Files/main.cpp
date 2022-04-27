@@ -251,12 +251,17 @@ void processInput(GLFWwindow* window, glm::vec3& position, glm::vec3& rotation, 
 		camPosition -= camSpeed * camDirection;
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+		camPosition -= dirSpeed * camFront;
+	}
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+		camPosition += dirSpeed * camFront;
+	}
+	if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) {
 		yawAngle -= dirSpeed;
 		camFront = cross(camDirection, worldUp);
 	}
-	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+	if (glfwGetKey(window, GLFW_KEY_DELETE) == GLFW_PRESS) {
 		yawAngle += dirSpeed;
 		camFront = cross(camDirection, worldUp);
 	}
-
 }
