@@ -18,7 +18,6 @@ void processInput(GLFWwindow* window);
 void processInput(GLFWwindow* window, glm::vec3& position, glm::vec3& rotation, glm::vec3& scale, int idObjeto);
 vector<Obj3D*> listaDeObjs;
 
-// settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 

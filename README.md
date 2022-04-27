@@ -52,8 +52,10 @@ Comando | Descrição
  Z | rotaciona N graus para direita em relação ao eixo X    
  C | rotaciona N graus para a esquerda em relação ao eixo X 
  T | escala o objeto em 10% a mais do seu tamanho atual      
- G | escala o objeto em 10% a menos do seu tamanho atual    
- → | rotaciona a câmera para a direita                      
- ← | rotaciona a câmera para a esquerda                     
+ G | escala o objeto em 10% a menos do seu tamanho atual
+Del | rotaciona a câmera para a esquerda                     
+PgDown | rotaciona a câmera para a direita     
+ → | move câmera para direita                      
+ ← | move câmera para esquerda                     
  ↑ | move câmera para frente                                
  ↓ | move câmera para trás                                  
